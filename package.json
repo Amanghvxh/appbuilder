@@ -1,0 +1,22 @@
+{
+  "name": "appbuilder",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@babel/cli": "^7.24.8",
+    "@babel/core": "^7.25.2",
+    "@babel/preset-react": "^7.24.7",
+    "@babel/standalone": "^7.25.3",
+    "acorn": "^8.12.1",
+    "acorn-jsx": "^5.3.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

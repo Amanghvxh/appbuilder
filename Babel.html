@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babel AST in Browser</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="app-root"></div>
+
+    <script type="text/babel">
+      class DynamicComponentRenderer {
+        constructor(rootElementId) {
+          this.rootElementId = rootElementId;
+        }
+
+        render(componentString) {
+          try {
+            if (!componentString) {
+              throw new Error("Component string cannot be empty.");
+            }
+
+            // Transform the component string into executable code
+            const transformedCode = Babel.transform(componentString, {
+              presets: ["react"],
+            }).code;
+
+            // Create a function to evaluate the transformed code and return the component
+            const componentFunction = new Function(
+              "React",
+              "ReactDOM",
+              `${transformedCode}; return App;`
+            );
+
+            // Get the component definition
+            const Component = componentFunction(React, ReactDOM);
+
+            // Render the component to the DOM
+            ReactDOM.render(
+              React.createElement(Component),
+              document.getElementById(this.rootElementId)
+            );
+          } catch (error) {
+            console.error("Error rendering component:", error);
+            alert(
+              "There was an error rendering the component. Please check your code and try again."
+            );
+          }
+        }
+      }
+
+      // React Component
+      const App = () => {
+        const [componentCode, setComponentCode] = React.useState("");
+        const renderer = new DynamicComponentRenderer("dynamicRoot");
+
+        const handleRenderClick = () => {
+          renderer.render(componentCode);
+        };
+
+        return (
+          <div className="container mx-auto p-4">
+            <h1 className="text-center text-2xl font-bold mb-4">
+              Dynamic React Component Renderer
+            </h1>
+
+            <div className="max-w-xl mx-auto my-4">
+              <textarea
+                value={componentCode}
+                onChange={(e) => setComponentCode(e.target.value)}
+                className="w-full h-48 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+                placeholder="Enter your React component code here..."
+              ></textarea>
+              <button
+                onClick={handleRenderClick}
+                className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+              >
+                Render Component
+              </button>
+            </div>
+
+            <div id="dynamicRoot" className="max-w-xl mx-auto mt-8"></div>
+          </div>
+        );
+      };
+
+      // Render the App component
+      ReactDOM.render(<App />, document.getElementById("app-root"));
+    </script>
+  </body>
+</html>

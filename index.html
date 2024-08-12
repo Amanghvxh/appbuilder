@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Firebase Console Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      #edit-modal,
+      #add-modal,
+      #add-collection-modal {
+        display: none;
+      }
+      .border-thin {
+        border-width: 1px;
+      }
+      .btn-primary {
+        background-color: #1e3a8a;
+        border-color: #1e3a8a;
+      }
+      .btn-primary:hover {
+        background-color: #1c2e7a;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 text-gray-900 font-sans antialiased">
+    <script src="Firebase.js"></script>
+    <!-- Main Container -->
+    <div class="flex flex-col md:flex-row min-h-screen">
+      <!-- Sidebar -->
+      <aside
+        id="sidebar"
+        class="w-full md:w-64 bg-gray-900 text-white shadow-lg border-r border-gray-700 md:relative z-10 transform md:translate-x-0 transition-transform duration-300 ease-in-out"
+      >
+        <div class="p-6">
+          <h1 class="text-3xl font-semibold">Firebase Console</h1>
+        </div>
+        <nav class="mt-10">
+          <a
+            href="#"
+            class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700"
+            onclick="loadSection('firestore')"
+          >
+            <span class="text-lg">Firestore</span>
+          </a>
+          <a
+            href="#"
+            class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 mt-2"
+            onclick="loadSection('auth')"
+          >
+            <span class="text-lg">Authentication</span>
+          </a>
+          <a
+            href="#"
+            class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 mt-2"
+            onclick="loadSection('storage')"
+          >
+            <span class="text-lg">Storage</span>
+          </a>
+          <a
+            href="#"
+            class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 mt-2"
+            onclick="loadSection('functions')"
+          >
+            <span class="text-lg">Functions</span>
+          </a>
+        </nav>
+
+        <!-- Collection Management -->
+        <div class="p-6">
+          <h2 class="text-lg font-semibold mb-4">Collections</h2>
+          <div id="collections-list">
+            <!-- Dynamic Collection List Will Be Inserted Here -->
+          </div>
+          <button
+            class="mt-4 btn-primary text-white px-4 py-2 rounded-lg shadow-md border border-blue-700 hover:bg-blue-500 transition duration-200"
+            onclick="openAddCollectionModal()"
+          >
+            + Add Collection
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main
+        class="flex-1 p-10 bg-white transition-all duration-300 ease-in-out"
+      >
+        <div
+          class="bg-gray-200 p-8 rounded-lg shadow-lg border border-gray-300"
+        >
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold" id="section-title">Firestore</h2>
+            <button
+              class="btn-primary text-white px-6 py-2 rounded-lg shadow-md border border-blue-700 hover:bg-blue-500 transition duration-200"
+              onclick="openAddModal()"
+            >
+              Add New Document
+            </button>
+          </div>
+          <div class="flex justify-center items-center md:hidden my-3">
+            <span class="font-bold text-xl text-white"><-- Scrollable --></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border-thin">
+              <thead id="table-headers">
+                <!-- Dynamic Headers Will Be Inserted Here -->
+              </thead>
+              <tbody class="text-gray-700" id="document-list">
+                <!-- Dynamic Document Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Add Collection Modal -->
+    <div
+      id="add-collection-modal"
+      class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50"
+    >
+      <div class="bg-gray-200 p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
+        <h3 class="text-xl font-semibold mb-4">Add New Collection</h3>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700"
+            >Collection Name:</label
+          >
+          <input
+            id="collection-name-input"
+            class="w-full bg-white text-gray-800 border border-gray-300 rounded-lg py-2 px-3 mt-1 focus:outline-none"
+            type="text"
+            placeholder="Enter collection name"
+          />
+        </div>
+        <div class="flex justify-end mt-4">
+          <button
+            class="btn-primary text-white px-4 py-2 rounded-lg shadow-md border border-blue-700 hover:bg-blue-500 transition duration-200 mr-2"
+            onclick="saveNewCollection()"
+          >
+            Save
+          </button>
+          <button
+            class="bg-gray-600 text-white px-4 py-2 rounded-lg shadow-md border border-gray-700 hover:bg-gray-500 transition duration-200"
+            onclick="closeAddCollectionModal()"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Document Modal -->
+    <div
+      id="add-modal"
+      class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50"
+    >
+      <div class="bg-gray-200 p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
+        <h3 class="text-xl font-semibold mb-4">Add New Document</h3>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700"
+            >Document ID (optional):</label
+          >
+          <input
+            id="doc-id-input"
+            class="w-full bg-white text-gray-800 border border-gray-300 rounded-lg py-2 px-3 mt-1 focus:outline-none"
+            type="text"
+            placeholder="Leave empty to auto-generate ID"
+          />
+        </div>
+        <div id="fields-container" class="mb-4">
+          <!-- Fields will be dynamically added here -->
+        </div>
+        <button
+          class="btn-primary text-white px-4 py-2 rounded-lg shadow-md border border-blue-700 hover:bg-blue-500 transition duration-200"
+          onclick="addField()"
+        >
+          Add Field
+        </button>
+        <div class="flex justify-end mt-4">
+          <button
+            class="btn-primary text-white px-4 py-2 rounded-lg shadow-md border border-blue-700 hover:bg-blue-500 transition duration-200 mr-2"
+            onclick="saveNewDocument()"
+          >
+            Save
+          </button>
+          <button
+            class="bg-gray-600 text-white px-4 py-2 rounded-lg shadow-md border border-gray-700 hover:bg-gray-500 transition duration-200"
+            onclick="closeAddModal()"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Document Modal -->
+    <div
+      id="edit-modal"
+      class="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50"
+    >
+      <div class="bg-gray-200 p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
+        <h3 class="text-xl font-semibold mb-4">Edit Document</h3>
+        <textarea
+          id="edit-document-textarea"
+          class="w-full h-64 bg-white text-gray-800 border border-gray-300 rounded-lg focus:outline-none resize-none"
+          autofocus
+        ></textarea>
+        <div class="flex justify-end mt-4">
+          <button
+            class="btn-primary text-white px-4 py-2 rounded-lg shadow-md border border-blue-700 hover:bg-blue-500 transition duration-200 mr-2"
+            onclick="saveDocument()"
+          >
+            Save
+          </button>
+          <button
+            class="bg-gray-600 text-white px-4 py-2 rounded-lg shadow-md border border-gray-700 hover:bg-gray-500 transition duration-200"
+            onclick="closeEditModal()"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const firebaseApp = Firebase.initializeApp({
+        dbName: "TestDB",
+        dbVersion: 1,
+      });
+      let firestore;
+      let currentDocRef;
+      let collections = new Set();
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        firestore = await firebaseApp.firestore();
+        loadCollections();
+      });
+
+      const loadSection = (section) => {
+        switch (section) {
+          case "firestore":
+            loadCollections();
+            break;
+          case "auth":
+            alert("Authentication is not implemented in this simulation.");
+            break;
+          case "storage":
+            alert("Storage is not implemented in this simulation.");
+            break;
+          case "functions":
+            alert("Functions is not implemented in this simulation.");
+            break;
+          default:
+            alert("This section is not implemented.");
+            break;
+        }
+      };
+
+      const loadCollections = async () => {
+        collections.clear();
+        const allCollections = await firestore.listCollections();
+        allCollections.forEach((collection) => {
+          collections.add(collection.collectionPath);
+        });
+        renderCollectionsList();
+        console.log("collectionpath", allCollections);
+        if (collections.size > 0) {
+          loadCollection([...collections][0]);
+        }
+      };
+
+      const renderCollectionsList = () => {
+        const collectionsList = document.getElementById("collections-list");
+        collectionsList.innerHTML = "";
+
+        collections.forEach((collectionName) => {
+          const collectionElement = document.createElement("div");
+          collectionElement.className =
+            "cursor-pointer hover:bg-gray-700 p-2 rounded";
+          collectionElement.innerText = collectionName;
+          collectionElement.onclick = () => loadCollection(collectionName);
+          collectionsList.appendChild(collectionElement);
+        });
+      };
+
+      const openAddCollectionModal = () => {
+        document.getElementById("add-collection-modal").style.display = "flex";
+      };
+
+      const closeAddCollectionModal = () => {
+        document.getElementById("add-collection-modal").style.display = "none";
+      };
+
+      const saveNewCollection = async () => {
+        const collectionName = document
+          .getElementById("collection-name-input")
+          .value.trim();
+        if (collectionName) {
+          collections.add(collectionName);
+          renderCollectionsList();
+          loadCollection(collectionName);
+        }
+        closeAddCollectionModal();
+      };
+
+      const loadCollection = async (collectionName) => {
+        const collectionRef = firestore.collection(collectionName);
+        const documents = await collectionRef.get();
+
+        const documentList = document.getElementById("document-list");
+        const tableHeaders = document.getElementById("table-headers");
+
+        document.getElementById("section-title").innerText = `Firestore - ${
+          collectionName.charAt(0).toUpperCase() + collectionName.slice(1)
+        } Collection`;
+
+        // Clear existing rows and headers
+        documentList.innerHTML = "";
+        tableHeaders.innerHTML = "";
+
+        // Determine dynamic headers based on the first document's fields
+        const allFields = new Set();
+        documents.forEach((docSnapshot) => {
+          const docData = docSnapshot.data();
+          if (docData) {
+            Object.keys(docData).forEach((field) => allFields.add(field));
+          }
+        });
+
+        if (allFields.size === 0) {
+          documentList.innerHTML = `<tr><td class="text-center" colspan="100%">No documents found in this collection.</td></tr>`;
+          return;
+        }
+
+        // Create table headers dynamically
+        let headerRow = '<tr class="w-full bg-gray-800 text-white text-lg">';
+        headerRow += `<th class="py-3 px-4 text-left border-b border-gray-700">ID</th>`;
+        allFields.forEach((field) => {
+          headerRow += `<th class="py-3 px-4 text-left border-b border-gray-700">${
+            field.charAt(0).toUpperCase() + field.slice(1)
+          }</th>`;
+        });
+        headerRow += `<th class="py-3 px-4 text-left border-b border-gray-700">Actions</th>`;
+        headerRow += "</tr>";
+        tableHeaders.innerHTML = headerRow;
+
+        // Populate the table with documents
+        documents.forEach((docSnapshot) => {
+          const docData = docSnapshot.data();
+          if (docData) {
+            const row = document.createElement("tr");
+            row.className = "border-b border-gray-700 cursor-pointer";
+
+            const docRef = firestore
+              .collection(collectionName)
+              .doc(docSnapshot.id);
+
+            row.onclick = () => openEditModal(docRef);
+            row.innerHTML = `
+          <td class="py-4 px-4 border-b border-gray-800">${docSnapshot.id}</td>
+      `;
+
+            allFields.forEach((field) => {
+              row.innerHTML += `<td class="py-4 px-4 border-b border-gray-800">${
+                docData[field] || ""
+              }</td>`;
+            });
+
+            row.innerHTML += `
+          <td class="py-4 px-4 border-b border-gray-800 flex space-x-2">
+              <button class="btn-primary text-white text-sm md:text-base px-2 md:px-4 py-1 rounded-lg shadow-md border border-blue-700 hover:bg-blue-500 transition duration-200">Edit</button>
+              <button class="bg-red-600 text-white text-sm md:text-base px-2 md:px-4 py-1 rounded-lg shadow-md border border-red-700 hover:bg-red-500 transition duration-200" onclick="event.stopPropagation(); deleteDocument('${collectionName}', '${docSnapshot.id}')">Delete</button>
+          </td>
+      `;
+            documentList.appendChild(row);
+          }
+        });
+      };
+
+      const openAddModal = () => {
+        document.getElementById("add-modal").style.display = "flex";
+        document.getElementById("fields-container").innerHTML = "";
+        addField();
+      };
+
+      const closeAddModal = () => {
+        document.getElementById("add-modal").style.display = "none";
+      };
+
+      const addField = () => {
+        const fieldContainer = document.createElement("div");
+        fieldContainer.className = "flex mb-2";
+        fieldContainer.innerHTML = `
+            <input
+                class="w-1/3 bg-white text-gray-800 border border-gray-300 rounded-lg py-2 px-3 mr-2 focus:outline-none"
+                type="text"
+                placeholder="Field Name"
+            />
+            <input
+                class="w-2/3 bg-white text-gray-800 border border-gray-300 rounded-lg py-2 px-3 focus:outline-none"
+                type="text"
+                placeholder="Field Value"
+            />
+            <button class="text-gray-600 hover:text-gray-800 ml-2" onclick="removeField(this)">Remove</button>
+        `;
+        document.getElementById("fields-container").appendChild(fieldContainer);
+      };
+
+      const removeField = (button) => {
+        button.parentElement.remove();
+      };
+
+      const saveNewDocument = async () => {
+        const collectionName = document
+          .getElementById("section-title")
+          .innerText.split(" ")[2]
+          .toLowerCase();
+        const collectionRef = firestore.collection(collectionName);
+        const docIdInput = document.getElementById("doc-id-input").value.trim();
+        const fields = document
+          .getElementById("fields-container")
+          .querySelectorAll("input[type='text']");
+        let newDocData = {};
+
+        for (let i = 0; i < fields.length; i += 2) {
+          const fieldName = fields[i].value.trim();
+          const fieldValue = fields[i + 1].value.trim();
+          if (fieldName && fieldValue) {
+            newDocData[fieldName] = fieldValue;
+          }
+        }
+
+        if (docIdInput) {
+          await collectionRef.doc(docIdInput).set(newDocData);
+        } else {
+          await collectionRef.add(newDocData);
+        }
+
+        closeAddModal();
+        loadCollection(collectionName);
+      };
+
+      const openEditModal = async (docRef) => {
+        currentDocRef = docRef;
+        const docData = await docRef.get().then((doc) => doc.data());
+        const textarea = document.getElementById("edit-document-textarea");
+        textarea.value = JSON.stringify(docData, null, 2);
+        document.getElementById("edit-modal").style.display = "flex";
+        textarea.focus();
+      };
+
+      const closeEditModal = () => {
+        document.getElementById("edit-modal").style.display = "none";
+      };
+
+      const saveDocument = async () => {
+        const textarea = document.getElementById("edit-document-textarea");
+        const updatedData = JSON.parse(textarea.value);
+        await currentDocRef.update(updatedData);
+        closeEditModal();
+        loadCollection(
+          document
+            .getElementById("section-title")
+            .innerText.split(" ")[2]
+            .toLowerCase()
+        );
+      };
+
+      const deleteDocument = async (collectionName, docId) => {
+        const docRef = firestore.collection(collectionName).doc(docId);
+        await docRef.delete();
+        loadCollection(collectionName);
+      };
+
+      const sidebar = document.getElementById("sidebar");
+      const closeBtn = document.getElementById("close-btn");
+
+      closeBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("-translate-x-full");
+      });
+    </script>
+  </body>
+</html>
